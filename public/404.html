@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ByteMC</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="index.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      window.__APP_CONFIG__ = window.__APP_CONFIG__ || {};
+      (function(){
+        var url = (document.baseURI || '/') + 'config.json';
+        try {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', url, false);
+          xhr.send(null);
+          if (xhr.status >= 200 && xhr.status < 300 && xhr.responseText) {
+            var cfg = JSON.parse(xhr.responseText);
+            window.__APP_CONFIG__ = cfg || {};
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script src="index.js"></script>
+  </body>
+  </html>

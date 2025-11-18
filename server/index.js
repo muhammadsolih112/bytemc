@@ -9,29 +9,31 @@ import dotenv from "dotenv";
 import { status } from "minecraft-server-util";
 import fs from "fs";
 
-// Force .env to override any pre-existing envs to avoid mismatched creds
-dotenv.config({ override: true });
-// Additionally parse .env directly so LiteBans creds always come from file when present
-let envParsed = {};
+dotenv.config();
+
+// Optional JSON config (server/config.json) to avoid relying on .env in local/dev
+const configPath = path.join(process.cwd(), "server", "config.json");
+let fileConfig = {};
 try {
-  const envPath = path.join(process.cwd(), ".env");
-  console.log("Using .env at", envPath);
-  if (fs.existsSync(envPath)) {
-    envParsed = dotenv.parse(fs.readFileSync(envPath));
+  if (fs.existsSync(configPath)) {
+    fileConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    console.log("Loaded server/config.json");
   }
-} catch {}
+} catch (e) {
+  console.warn("Failed to read server/config.json:", String(e));
+}
 
 const app = express();
-const PORT = process.env.PORT || 4000;
-const JWT_SECRET = process.env.JWT_SECRET || "change-this-secret";
-const LITEBANS_DB_HOST = envParsed.LITEBANS_DB_HOST ?? process.env.LITEBANS_DB_HOST;
-const LITEBANS_DB_PORT = Number(envParsed.LITEBANS_DB_PORT ?? process.env.LITEBANS_DB_PORT ?? 3306);
-const LITEBANS_DB_USER = envParsed.LITEBANS_DB_USER ?? process.env.LITEBANS_DB_USER;
-const LITEBANS_DB_PASS = envParsed.LITEBANS_DB_PASS ?? process.env.LITEBANS_DB_PASS;
-const LITEBANS_DB_NAME = envParsed.LITEBANS_DB_NAME ?? process.env.LITEBANS_DB_NAME ?? "litebans";
-const LITEBANS_TABLE_PREFIX = envParsed.LITEBANS_TABLE_PREFIX ?? process.env.LITEBANS_TABLE_PREFIX ?? "litebans_";
+const PORT = fileConfig.PORT || process.env.PORT || 4000;
+const JWT_SECRET = fileConfig.JWT_SECRET || process.env.JWT_SECRET || "change-this-secret";
+const LITEBANS_DB_HOST = fileConfig.LITEBANS_DB_HOST || process.env.LITEBANS_DB_HOST;
+const LITEBANS_DB_PORT = Number(fileConfig.LITEBANS_DB_PORT || process.env.LITEBANS_DB_PORT || 3306);
+const LITEBANS_DB_USER = fileConfig.LITEBANS_DB_USER || process.env.LITEBANS_DB_USER;
+const LITEBANS_DB_PASS = fileConfig.LITEBANS_DB_PASS || process.env.LITEBANS_DB_PASS;
+const LITEBANS_DB_NAME = fileConfig.LITEBANS_DB_NAME || process.env.LITEBANS_DB_NAME || "litebans";
+const LITEBANS_TABLE_PREFIX = fileConfig.LITEBANS_TABLE_PREFIX || process.env.LITEBANS_TABLE_PREFIX || "litebans_";
 let LB_PREFIX = LITEBANS_TABLE_PREFIX; // will be auto-detected at runtime
-const LITEBANS_DB_SSL = String(process.env.LITEBANS_DB_SSL || "false").toLowerCase() === "true";
+const LITEBANS_DB_SSL = String(fileConfig.LITEBANS_DB_SSL ?? process.env.LITEBANS_DB_SSL ?? "false").toLowerCase() === "true";
 
 // CORS: devda barcha manbalarni ruxsat beramiz (localhost va LAN IP)
 app.use(cors());
@@ -67,67 +69,37 @@ function writeDB(db) {
 const useLitebans = Boolean(LITEBANS_DB_HOST && LITEBANS_DB_USER);
 let lbPool = null;
 if (useLitebans) {
-  // Switch to MariaDB driver and provide a small mysql2-compat wrapper
-  const mariadb = await import("mariadb");
-  const _pool = mariadb.createPool({
+  const mysql = await import("mysql2/promise");
+  lbPool = mysql.createPool({
     host: LITEBANS_DB_HOST,
     port: LITEBANS_DB_PORT,
     user: LITEBANS_DB_USER,
     password: LITEBANS_DB_PASS,
     database: LITEBANS_DB_NAME,
+    waitForConnections: true,
     connectionLimit: 10,
     ssl: LITEBANS_DB_SSL ? { rejectUnauthorized: false } : undefined,
   });
-console.log("LiteBans DB config", {
-  host: LITEBANS_DB_HOST,
-  port: LITEBANS_DB_PORT,
-  user: LITEBANS_DB_USER,
-  database: LITEBANS_DB_NAME,
-  ssl: LITEBANS_DB_SSL,
-});
-if (envParsed && (envParsed.LITEBANS_DB_USER || envParsed.LITEBANS_DB_NAME)) {
-  console.log("LiteBans .env parsed", {
-    user: envParsed.LITEBANS_DB_USER,
-    database: envParsed.LITEBANS_DB_NAME,
-  });
-}
-  lbPool = {
-    async query(sql, params = []) {
-      let conn;
-      try {
-        conn = await _pool.getConnection();
-        const rows = await conn.query(sql, params);
-        // emulate mysql2 shape: return [rows]
-        return [Array.isArray(rows) ? rows : [rows]];
-      } finally {
-        if (conn) conn.release();
+  console.log("LiteBans DB mode enabled: reading punishments from database");
+
+  // Auto-detect table prefix if possible
+  try {
+    const [rows] = await lbPool.query(
+      "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()"
+    );
+    const names = rows.map(r => String(r.table_name || r.TABLE_NAME));
+    const candidates = names.filter(n => /mutes$/.test(n) || /bans$/.test(n));
+    // Prefer tables ending with mutes
+    const pick = (candidates.find(n => /mutes$/.test(n)) || candidates[0] || "");
+    if (pick) {
+      const prefix = pick.replace(/(mutes|bans)$/i, "");
+      if (prefix !== LB_PREFIX) {
+        LB_PREFIX = prefix;
+        console.log(`Detected LiteBans table prefix: '${LB_PREFIX}'`);
       }
-    },
-    async execute(sql, params = []) {
-      // MariaDB driver supports query for DML too; keep shape compatible
-      return this.query(sql, params);
-    },
-    async end() { return _pool.end(); }
-  };
-  console.log("LiteBans DB mode enabled: reading punishments from database (MariaDB)");
-  // Auto-detect table prefix faqat envda prefix berilmaganida
-  const SHOULD_DETECT_PREFIX = !envParsed.LITEBANS_TABLE_PREFIX && !process.env.LITEBANS_TABLE_PREFIX;
-  if (SHOULD_DETECT_PREFIX) {
-    try {
-      const [rows] = await lbPool.query(
-        "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()"
-      );
-      const names = rows.map(r => String(r.table_name || r.TABLE_NAME));
-      const candidates = names.filter(n => /mutes$/.test(n) || /bans$/.test(n));
-      const pick = (candidates.find(n => /mutes$/.test(n)) || candidates[0] || "");
-      if (pick) {
-        const prefix = pick.replace(/(mutes|bans)$/i, "");
-        if (prefix) {
-          LB_PREFIX = prefix;
-          console.log(`Detected LiteBans table prefix: '${LB_PREFIX}'`);
-        }
-      }
-    } catch {}
+    }
+  } catch (e) {
+    console.warn("Could not auto-detect LiteBans prefix, using env/default:", LB_PREFIX);
   }
 }
 
@@ -456,8 +428,8 @@ async function getKicksList() {
 }
 
 // Seed admin if none exists
-const defaultAdminUser = process.env.ADMIN_USER || "admin";
-const defaultAdminPass = process.env.ADMIN_PASS || "admin123"; // CHANGE THIS IN PROD
+const defaultAdminUser = fileConfig.ADMIN_USER || process.env.ADMIN_USER || "admin";
+const defaultAdminPass = fileConfig.ADMIN_PASS || process.env.ADMIN_PASS || "admin123"; // CHANGE THIS IN PROD
 let db = readDB();
 if (db.admins.length === 0) {
   const hash = bcrypt.hashSync(defaultAdminPass, 10);
@@ -493,10 +465,10 @@ function ensureAccount(username, role, plain) {
   writeDB(db);
 }
 
-const helperUser = process.env.HELPER_USER;
-const helperPass = process.env.HELPER_PASS;
-const moderUser = process.env.MODER_USER;
-const moderPass = process.env.MODER_PASS;
+const helperUser = fileConfig.HELPER_USER || process.env.HELPER_USER;
+const helperPass = fileConfig.HELPER_PASS || process.env.HELPER_PASS;
+const moderUser = fileConfig.MODER_USER || process.env.MODER_USER;
+const moderPass = fileConfig.MODER_PASS || process.env.MODER_PASS;
 ensureAccount(helperUser, "helper", helperPass);
 ensureAccount(moderUser, "moderator", moderPass);
 
@@ -736,9 +708,9 @@ app.get("/api/debug/litebans/probe", async (_req, res) => {
     const [m] = await lbPool.query(`SELECT COUNT(*) AS c FROM ${LB_PREFIX}mutes`);
     const [b] = await lbPool.query(`SELECT COUNT(*) AS c FROM ${LB_PREFIX}bans`);
     const [k] = await lbPool.query(`SELECT COUNT(*) AS c FROM ${LB_PREFIX}kicks`);
-    out.mutes = m?.[0]?.c != null ? Number(m[0].c) : null;
-    out.bans = b?.[0]?.c != null ? Number(b[0].c) : null;
-    out.kicks = k?.[0]?.c != null ? Number(k[0].c) : null;
+    out.mutes = m?.[0]?.c ?? null;
+    out.bans = b?.[0]?.c ?? null;
+    out.kicks = k?.[0]?.c ?? null;
     res.json(out);
   } catch (e) {
     res.status(500).json({ error: String(e), prefix: LB_PREFIX });
@@ -750,8 +722,8 @@ app.get("/api/debug/litebans/probe", async (_req, res) => {
 // Minecraft server status for bytemc.uz
 app.get("/api/server/status", async (_req, res) => {
   try {
-    const host = process.env.MC_HOST || "bytemc.uz";
-    const port = Number(process.env.MC_PORT || 25565);
+    const host = fileConfig.MC_HOST || process.env.MC_HOST || "bytemc.uz";
+    const port = Number(fileConfig.MC_PORT || process.env.MC_PORT || 25565);
     const result = await status(host, port, { timeout: 5000 });
     const onlinePlayers = result.players.online;
     const maxPlayers = result.players.max;

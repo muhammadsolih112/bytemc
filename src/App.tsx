@@ -10,7 +10,6 @@ import Mutes from "./pages/Mutes";
 import Kicks from "./pages/Kicks";
 import NotFound from "./pages/NotFound";
 import Rules from "./pages/Rules";
-import SearchPage from "./pages/Search";
 
 const queryClient = new QueryClient();
 
@@ -19,15 +18,13 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/bytemc" element={<Index />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/bans" element={<Bans />} />
           <Route path="/mutes" element={<Mutes />} />
           <Route path="/kicks" element={<Kicks />} />
-          <Route path="/search" element={<SearchPage />} />
           <Route path="/rules" element={<Rules />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

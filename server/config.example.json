@@ -1,0 +1,19 @@
+{
+  "PORT": 4000,
+  "JWT_SECRET": "change-this-secret",
+  "ADMIN_USER": "admin",
+  "ADMIN_PASS": "admin123",
+  "HELPER_USER": "helper",
+  "HELPER_PASS": "helperpass",
+  "MODER_USER": "moder",
+  "MODER_PASS": "moderpass",
+  "LITEBANS_DB_HOST": "127.0.0.1",
+  "LITEBANS_DB_PORT": 3306,
+  "LITEBANS_DB_USER": "litebans_user",
+  "LITEBANS_DB_PASS": "litebans_password",
+  "LITEBANS_DB_NAME": "litebans",
+  "LITEBANS_TABLE_PREFIX": "litebans_",
+  "LITEBANS_DB_SSL": false,
+  "MC_HOST": "bytemc.uz",
+  "MC_PORT": 25565
+}

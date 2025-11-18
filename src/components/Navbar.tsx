@@ -20,7 +20,7 @@ const Navbar = () => {
     <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-crypto-blue/80 backdrop-blur-md py-3 shadow-lg' : 'py-6'}`}>
       <div className="container mx-auto px-4 flex justify-between items-center">
         <div className="flex items-center">
-          <Link to="/bytemc" className="text-2xl font-bold text-white">
+          <Link to="/" className="text-2xl font-bold text-white">
             Byte<span className="text-crypto-purple">MC</span>
           </Link>
         </div>
@@ -28,7 +28,7 @@ const Navbar = () => {
         {/* Desktop menu */}
         <ul className="hidden lg:flex items-center space-x-8">
           <li>
-            <Link to="/bytemc" className="text-gray-300 hover:text-white transition-colors">Bosh sahifa</Link>
+            <Link to="/" className="text-gray-300 hover:text-white transition-colors">Bosh sahifa</Link>
           </li>
           <li>
             <Link to="/bans" className="text-gray-300 hover:text-white transition-colors">Banlar</Link>
@@ -62,7 +62,7 @@ const Navbar = () => {
           <div className="container mx-auto px-4">
             <ul className="flex flex-col space-y-4">
               <li>
-                <Link to="/bytemc" className="text-gray-300 hover:text-white transition-colors block py-2" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link to="/" className="text-gray-300 hover:text-white transition-colors block py-2" onClick={() => setIsMobileMenuOpen(false)}>
                   Bosh sahifa
                 </Link>
               </li>

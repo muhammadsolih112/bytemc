@@ -18,3 +18,4 @@ build
 # Ignore uploaded files (keep placeholder)
 public/uploads/*
 !public/uploads/.gitkeep
+server/config.json

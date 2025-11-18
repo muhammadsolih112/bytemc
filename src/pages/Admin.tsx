@@ -3,7 +3,17 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 
-const API = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:4000`;
+const API = (() => {
+  const cfg = (window as any).__APP_CONFIG__;
+  if (cfg && cfg.apiBaseUrl) return String(cfg.apiBaseUrl).replace(/\/$/, "");
+  const env = import.meta.env.VITE_API_URL;
+  if (env) return String(env).replace(/\/$/, "");
+  const host = window.location.hostname;
+  const isLocal = host === "localhost" || host === "127.0.0.1" || /^10\./.test(host) || /^192\.168\./.test(host);
+  if (isLocal) return `http://${host}:4000`;
+  const proto = window.location.protocol === "https:" ? "https" : "http";
+  return `${proto}://${host}`;
+})();
 
 type Entry = {
   id: number;
@@ -74,9 +84,9 @@ export default function Admin() {
       setLoggedUser(String(data.username || username));
     } catch (err: any) {
       const msg = String(err?.message || err);
-      // Provide clearer guidance for common network/CORS issues
       if (msg.toLowerCase().includes("failed to fetch")) {
-        setError(`API ga ulanib bo'lmadi: ${API}. Backend ishga tushganmi? Windows Firewall port 4000 ni bloklamaganmi?`);
+        const hint = import.meta.env.VITE_API_URL ? `API: ${API}` : `API: ${API}. Productionda backend URL kerak (VITE_API_URL).`;
+        setError(`API ga ulanib bo'lmadi. ${hint}`);
       } else {
         setError(msg);
       }
@@ -152,7 +162,7 @@ export default function Admin() {
         <div className="container mx-auto max-w-xl p-6 pt-24 animate-fade-in">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">Admin Login</h1>
-            <Link to="/bytemc" className="text-sm text-crypto-purple hover:underline">Bosh sahifa</Link>
+            <Link to="/" className="text-sm text-crypto-purple hover:underline">Bosh sahifa</Link>
           </div>
           <form onSubmit={login} className="space-y-4">
             <input className="w-full border border-gray-300 bg-white text-black placeholder-gray-500 p-2 rounded focus:outline-none focus:ring-2 focus:ring-crypto-purple" placeholder="Login" value={username} onChange={e => setUsername(e.target.value)} />

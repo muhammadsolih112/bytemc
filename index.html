@@ -28,6 +28,26 @@
     <div id="root"></div>
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
     <!-- <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script> -->
+    <script>
+      window.__APP_CONFIG__ = window.__APP_CONFIG__ || {};
+    </script>
+    <script>
+      (function(){
+        var base = (typeof window.__vite_base__ !== 'undefined' ? window.__vite_base__ : (document.baseURI || '/'));
+        var url = (base.endsWith('/') ? base : base + '/') + 'config.json';
+        try {
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', url, false);
+          xhr.send(null);
+          if (xhr.status >= 200 && xhr.status < 300 && xhr.responseText) {
+            var cfg = JSON.parse(xhr.responseText);
+            window.__APP_CONFIG__ = cfg || {};
+          }
+        } catch (e) {
+          // ignore
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -270,9 +270,14 @@
       "id": 62,
       "player": "§fOnline: §359§8/§b2025",
       "first_seen": "2025-11-18T14:04:50.439Z"
+    },
+    {
+      "id": 63,
+      "player": "§fOnline: §336§8/§b2025",
+      "first_seen": "2025-11-18T17:36:16.538Z"
     }
   ],
-  "seq": 63,
+  "seq": 64,
   "proofs": [
     {
       "key": "ban:3",
