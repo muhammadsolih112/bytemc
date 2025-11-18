@@ -260,15 +260,25 @@
       "id": 60,
       "player": "§fOnline: §361§8/§b2025",
       "first_seen": "2025-11-17T16:22:06.985Z"
+    },
+    {
+      "id": 61,
+      "player": "§fOnline: §360§8/§b2025",
+      "first_seen": "2025-11-18T14:02:15.403Z"
+    },
+    {
+      "id": 62,
+      "player": "§fOnline: §359§8/§b2025",
+      "first_seen": "2025-11-18T14:04:50.439Z"
     }
   ],
-  "seq": 61,
+  "seq": 63,
   "proofs": [
     {
       "key": "ban:3",
-      "image_url": "/uploads/1763303803148_photo_2025-11-16_15-29-45.jpg",
+      "image_url": "/uploads/1763474667670_Screenshot_2025-11-18_183053.png",
       "added_by": "bytemcadmin",
-      "added_at": "2025-11-16T14:36:43.154Z"
+      "added_at": "2025-11-18T14:04:27.677Z"
     },
     {
       "key": "mute:7",
