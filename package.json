@@ -3,7 +3,7 @@
     "private": true,
     "version": "1.0.0",
     "type": "module",
-    "homepage": "https://themewagon.github.io/bytemc",
+    "homepage": "https://muhammadsolih112.github.io/bytemc",
   "scripts": {
         "dev": "vite",
         "server": "node server/index.js",
@@ -73,7 +73,7 @@
         "jsonwebtoken": "^9.0.2",
         "minecraft-server-util": "^5.3.0",
         "multer": "^1.4.5-lts.1",
-        "mariadb": "^3.3.0"
+        "mysql2": "^3.11.3"
     },
     "devDependencies": {
         "@eslint/js": "^9.9.0",
